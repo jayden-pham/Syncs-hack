@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "userId": "4de39fad-659b-41aa-aba1-2aab01b24140",
+      "username": "alex@example.com",
+      "password": "$2b$10$rA7E6L.Mnry0anODY.zk7ut4oqmnxXbbF.zJbVkwp.cOZ6RWgKsLO",
+      "profileId": "c7833b63-bbeb-492f-8080-202f7b77c6bc"
+    }
+  ],
+  "profiles": [
+    {
+      "profileId": "c7833b63-bbeb-492f-8080-202f7b77c6bc",
+      "nameFirst": "Alex",
+      "nameLast": "Zhang",
+      "budget": 450,
+      "bio": "chill roommate, tidy",
+      "location": "Sydney",
+      "phoneNumber": null,
+      "currentGroupId": null
+    }
+  ]
+}
