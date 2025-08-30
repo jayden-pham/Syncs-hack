@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
 from server.db import db
-from server.models.chat import Chat, ChatParticipant
+from server.models.user import User
+from server.models.chat import Chat
 from server.models.message import Message
 
 chat_bp = Blueprint("chats", __name__)
@@ -14,47 +15,19 @@ def current_uid() -> int:
     return int(get_jwt_identity())
 
 def is_participant(chat_id: int, uid: int) -> bool:
-    return db.session.query(
-        ChatParticipant.query.filter_by(chat_id=chat_id, user_id=uid).exists()
-    ).scalar()
+    c = Chat.query.get(chat_id)
+    if not c:
+        return False
+    gid = User.query.get(uid).group_id
+    if gid != c.group1_id and gid != c.group2_id:
+        return False
+    return True
 
 def ensure_membership_or_404(chat_id: int, uid: int):
     if not is_participant(chat_id, uid):
         return jsonify({"error": "Not found"}), 404
 
 # ------------ Endpoints ------------
-
-@chat_bp.post("/")
-@jwt_required()
-def create_chat():
-    """
-    Create a chat with the current user + provided participant_user_ids.
-    Body: { "participant_user_ids": [2,3,...], "title": "optional" }
-    Current user is auto-included and de-duped.
-    """
-    uid = current_uid()
-    data = request.get_json(force=True) or {}
-    title = data.get("title")
-    ids = set(map(int, data.get("participant_user_ids", [])))
-    ids.add(uid)  # ensure creator included
-
-    if len(ids) < 2:
-        return jsonify({"error": "A chat needs at least 2 participants"}), 400
-
-    chat = Chat(title=title)
-    db.session.add(chat)
-    db.session.flush()
-
-    # creator is owner, others are members
-    parts = []
-    for pid in ids:
-        role = "owner" if pid == uid else "member"
-        parts.append(ChatParticipant(chat_id=chat.id, user_id=pid, role=role))
-    db.session.bulk_save_objects(parts)
-    db.session.commit()
-
-    return jsonify({"chat": chat.to_dict(), "participants": list(ids)}), 201
-
 
 @chat_bp.get("/")
 @jwt_required()
@@ -63,9 +36,12 @@ def list_my_chats():
     List chats the current user is in with last message preview.
     """
     uid = current_uid()
+    gid = User.query.get(uid).group_id
 
     # find chat ids for user
-    user_chat_ids = db.session.query(ChatParticipant.chat_id).filter_by(user_id=uid).subquery()
+    q1 = db.session.query(Chat.id).filter_by(group1_id=gid)
+    q2 = db.session.query(Chat.id).filter_by(group2_id=gid)
+    user_chat_ids = q1.union(q2).subquery()
 
     # last message per chat
     last_msg = (
@@ -154,48 +130,14 @@ def send_message(chat_id: int):
     return jsonify({"message": msg.to_dict()}), 201
 
 
-@chat_bp.post("/<int:chat_id>/participants")
+@chat_bp.delete("/<int:chat_id>")
 @jwt_required()
-def add_participants(chat_id: int):
-    """
-    Add users to a chat (any member can add for now).
-    Body: { "user_ids": [ ... ] }
-    """
-    uid = current_uid()
-    not_found = ensure_membership_or_404(chat_id, uid)
-    if not_found:
-        return not_found
-
-    data = request.get_json(force=True) or {}
-    ids = set(map(int, data.get("user_ids", [])))
-    if not ids:
-        return jsonify({"error": "user_ids required"}), 400
-
-    existing = set(
-        pid for (pid,) in
-        db.session.query(ChatParticipant.user_id).filter_by(chat_id=chat_id).all()
-    )
-    to_add = ids - existing
-    objs = [ChatParticipant(chat_id=chat_id, user_id=pid, role="member") for pid in to_add]
-    if objs:
-        db.session.bulk_save_objects(objs)
-        db.session.commit()
-    return jsonify({"added": list(to_add)})
-
-
-@chat_bp.delete("/<int:chat_id>/participants/<int:user_id>")
-@jwt_required()
-def remove_participant(chat_id: int, user_id: int):
+def remove_participant(chat_id: int):
     """
     Remove a participant. Users can remove themselves to leave the chat.
     (Add role checks later if you want owners-only removal.)
     """
-    uid = current_uid()
-    not_found = ensure_membership_or_404(chat_id, uid)
-    if not_found:
-        return not_found
-
-    deleted = ChatParticipant.query.filter_by(chat_id=chat_id, user_id=user_id).delete()
+    deleted = Chat.query.filter_by(id=chat_id).delete()
     if deleted:
         db.session.commit()
     return jsonify({"removed": bool(deleted)})
