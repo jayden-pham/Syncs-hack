@@ -18,12 +18,16 @@ def create_app():
     JWTManager(app)
     CORS(app)
 
-    from .routes.group_routes import group_bp  # <-- relative import AFTER db.init_app
-    from .routes.swipe_routes import swipe_bp
-    from .routes.chat_routes import chat_bp
+    from server.routes.group_routes import group_bp  # <-- relative import AFTER db.init_app
+    from server.routes.swipe_routes import swipe_bp
+    from server.routes.chat_routes import chat_bp
+    from server.routes.auth_routes import auth_bp
+    from server.routes.user_routes import user_bp
     app.register_blueprint(group_bp, url_prefix="/groups")
     app.register_blueprint(swipe_bp, url_prefix="/swipes")
     app.register_blueprint(chat_bp,  url_prefix="/chats")
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(user_bp, url_prefix="/users")
 
     with app.app_context():
         db.create_all()
