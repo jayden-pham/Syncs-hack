@@ -1,9 +1,7 @@
 # server/group.py
 from datetime import datetime
 from sqlalchemy import UniqueConstraint
-from .app import db
-from .extensions import db
-
+from server.db import db
 
 class Group(db.Model):
     __tablename__ = "groups"

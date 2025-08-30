@@ -5,7 +5,7 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from .extensions import db
+from server.db import db
 
 def create_app():
     app = Flask(__name__)

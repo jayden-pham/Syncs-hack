@@ -2,9 +2,8 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
-from .app import db
-from .group import Group, GroupMember
-from .extensions import db
+from server.db import db
+from server.group import Group, GroupMember
 
 
 group_bp = Blueprint("groups", __name__)
