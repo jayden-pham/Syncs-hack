@@ -1,7 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-from app import db
+from .app import db
+from .extensions import db
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -15,12 +14,18 @@ class User(db.Model):
     max_budget = db.Column(db.Integer)
     bio = db.Column(db.Text)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
-    created_at = db.Column(db.DateTime, default=datetime.timezone.utc)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Group(db.Model):
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text)
+
+    def to_card(self):
+        return {
+            "id": self.id, "name": self.name, "description": self.description
+        }
 
 class Candidate(db.Model):
     __tablename__ = 'candidates'
@@ -52,4 +57,4 @@ class Message(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.timezone.utc)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
