@@ -19,7 +19,9 @@ def create_app():
     CORS(app)
 
     from .group_routes import group_bp  # <-- relative import AFTER db.init_app
+    from .swipe_routes import swipe_bp
     app.register_blueprint(group_bp, url_prefix="/groups")
+    app.register_blueprint(swipe_bp, url_prefix="/swipes")
 
     with app.app_context():
         db.create_all()

@@ -36,8 +36,8 @@ class Candidate(db.Model):
 class Swipe(db.Model):
     __tablename__ = 'swipes'
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), primary_key=True)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), primary_key=True)
+    sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), nullable=False)
 
 class Approval(db.Model):
     __tablename__ = 'approvals'
@@ -48,8 +48,8 @@ class Approval(db.Model):
 class Chat(db.Model):
     __tablename__ = 'chats'
     id = db.Column(db.Integer, primary_key=True)
-    group1_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), primary_key=True)
-    group2_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), primary_key=True)
+    group1_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), nullable=False)
+    group2_id = db.Column(db.Integer, db.ForeignKey('groups.id', ondelete='CASCADE'), nullable=False)
 
 class Message(db.Model):
     __tablename__ = 'messages'
