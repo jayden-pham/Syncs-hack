@@ -6,7 +6,7 @@ from random import shuffle
 from server.app import db
 from server.models.group import Group
 from server.models.user import User
-from server.models.swipe import Swipe, Candidate
+from server.models.swipe import Swipe
 from server.models.chat import Chat
 
 swipe_bp = Blueprint("swipes", __name__)
@@ -63,7 +63,7 @@ def view_candidate():
     members = User.query.filter_by(group_id=rid).all()
     return jsonify({
         "group": g.to_card(),
-        "members": [m.to_card() for m in members]
+        "members": [m.public_profile() for m in members]
     })
 
 def check_mutual_swipe(sid, rid):
