@@ -3,7 +3,8 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
 from server.db import db
-from server.chat import Chat, ChatParticipant, Message
+from server.models.chat import Chat, ChatParticipant
+from server.models.message import Message
 
 chat_bp = Blueprint("chats", __name__)
 

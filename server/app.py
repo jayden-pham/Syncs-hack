@@ -18,24 +18,17 @@ def create_app():
     JWTManager(app)
     CORS(app)
 
-    import server.user
-    import server.group
-    import server.chat
+    import server.models.user
+    import server.models.group
+    import server.models.chat
 
-    from server.group_routes import group_bp  # <-- relative import AFTER db.init_app
-    from server.chat_routes import chat_bp
+    from server.routes.group_routes import group_bp  # <-- relative import AFTER db.init_app
+    from server.routes.chat_routes import chat_bp
     app.register_blueprint(group_bp, url_prefix="/groups")
     app.register_blueprint(chat_bp,  url_prefix="/chats")
 
     with app.app_context():
         db.create_all()
-
-    @app.get("/health")
-    def health():
-        return {"ok": True}
-
-    @app.errorhandler(404)
-    def nf(_): return jsonify({"error":"Not found"}), 404
 
     return app
 

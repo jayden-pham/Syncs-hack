@@ -1,6 +1,5 @@
-from datetime import datetime
-from .app import db
-from .extensions import db
+from datetime import datetime, timezone
+from server.db import db
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -14,7 +13,7 @@ class User(db.Model):
     max_budget = db.Column(db.Integer)
     bio = db.Column(db.Text)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Group(db.Model):
     __tablename__ = 'groups'
@@ -57,4 +56,4 @@ class Message(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

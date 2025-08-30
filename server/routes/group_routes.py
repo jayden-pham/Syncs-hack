@@ -4,7 +4,8 @@ from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identi
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import delete
 from server.db import db
-from server.models import Group, User
+from server.models.group import Group
+from server.models.user import User
 
 
 group_bp = Blueprint("groups", __name__)
@@ -14,11 +15,25 @@ def dev_login():
     data = request.get_json(force=True)
     uid = int(data.get("user_id", 1))
     name = data.get("name", f"user-{uid}")
-    token = create_access_token(identity=str(uid), additional_claims={"name": name})
-    u = User(id = uid, username = "abc", password_hash = "xyz", name = name)
-    db.session.add(u); db.session.flush()
-    db.session.commit()
-    ensure_user_has_group(uid)
+
+    # Try to reuse the same user; create only if missing
+    u = db.session.get(User, uid)  # SQLAlchemy 2.0 style; or User.query.get(uid) in 1.x
+    if u is None:
+        u = User(
+            id=uid,
+            username=f"user-{uid}",   # avoid unique collisions on username
+            password_hash="xyz",
+            name=name,
+        )
+        db.session.add(u)
+    else:
+        # optional: keep dev info fresh
+        u.name = name
+
+    db.session.commit()  # flush happens here
+
+    ensure_user_has_group(u.id)  # if this writes, consider wrapping in same txn
+    token = create_access_token(identity=str(u.id), additional_claims={"name": u.name})
     return jsonify({"access_token": token})
 
 @group_bp.get("/me")
