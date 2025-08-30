@@ -1,0 +1,251 @@
+{
+    "info": {
+      "name": "Hackathon Chats",
+      "_postman_id": "2b2a8d9e-6b30-4c31-9b9d-aaaaaaaabbbb",
+      "description": "Login, create chat, send & list messages, add/remove participants.",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "0) Dev Login (sets {{token}})",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"user_id\": {{user1_id}},\n  \"name\": \"User-{{user1_id}}\"\n}"
+          },
+          "url": {
+            "raw": "{{base_url}}/groups/dev/login",
+            "host": ["{{base_url}}"],
+            "path": ["groups", "dev", "login"]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 200\", () => pm.response.code === 200);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('access_token');",
+                "pm.collectionVariables.set('token', json.access_token);"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "1) Create Chat (sets {{chat_id}})",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"participant_user_ids\": [ {{user2_id}} ],\n  \"title\": \"Chat: {{user1_id}} & {{user2_id}}\"\n}"
+          },
+          "url": {
+            "raw": "{{base_url}}/chats/",
+            "host": ["{{base_url}}"],
+            "path": ["chats", ""]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 201\", () => pm.response.code === 201);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('chat');",
+                "pm.collectionVariables.set('chat_id', json.chat.id);"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "2) Send Message",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"content\": \"hello from user {{user1_id}}\"\n}"
+          },
+          "url": {
+            "raw": "{{base_url}}/chats/{{chat_id}}/messages",
+            "host": ["{{base_url}}"],
+            "path": ["chats", "{{chat_id}}", "messages"]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 201\", () => pm.response.code === 201);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('message');"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "3) Get Messages",
+        "request": {
+          "method": "GET",
+          "header": [
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "url": {
+            "raw": "{{base_url}}/chats/{{chat_id}}/messages?limit=50",
+            "host": ["{{base_url}}"],
+            "path": ["chats", "{{chat_id}}", "messages"],
+            "query": [{ "key": "limit", "value": "50" }]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 200\", () => pm.response.code === 200);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('messages');"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "4) List My Chats (with last message)",
+        "request": {
+          "method": "GET",
+          "header": [
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "url": {
+            "raw": "{{base_url}}/chats/",
+            "host": ["{{base_url}}"],
+            "path": ["chats", ""]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 200\", () => pm.response.code === 200);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('chats');"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "5) Add Participants",
+        "request": {
+          "method": "POST",
+          "header": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"user_ids\": [ {{user3_id}} ]\n}"
+          },
+          "url": {
+            "raw": "{{base_url}}/chats/{{chat_id}}/participants",
+            "host": ["{{base_url}}"],
+            "path": ["chats", "{{chat_id}}", "participants"]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 200\", () => pm.response.code === 200);",
+                "const json = pm.response.json();",
+                "pm.expect(json).to.have.property('added');"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "6) Remove Participant (kick {{user2_id}})",
+        "request": {
+          "method": "DELETE",
+          "header": [
+            { "key": "Authorization", "value": "Bearer {{token}}" }
+          ],
+          "url": {
+            "raw": "{{base_url}}/chats/{{chat_id}}/participants/{{user2_id}}",
+            "host": ["{{base_url}}"],
+            "path": ["chats", "{{chat_id}}", "participants", "{{user2_id}}"]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 200\", () => pm.response.code === 200);"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "7) Unauthorized (expect 401)",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{base_url}}/chats/",
+            "host": ["{{base_url}}"],
+            "path": ["chats", ""]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test(\"status 401\", () => pm.response.code === 401);"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      }
+    ],
+    "variable": [
+      { "key": "base_url", "value": "http://127.0.0.1:5000" },
+      { "key": "user1_id", "value": "1" },
+      { "key": "user2_id", "value": "2" },
+      { "key": "user3_id", "value": "3" },
+      { "key": "token", "value": "" },
+      { "key": "chat_id", "value": "" }
+    ]
+  }
+  
