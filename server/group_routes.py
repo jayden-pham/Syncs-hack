@@ -2,8 +2,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import delete
 from server.db import db
-from server.group import Group, GroupMember
+from server.models import Group, User
 
 
 group_bp = Blueprint("groups", __name__)
@@ -14,6 +15,9 @@ def dev_login():
     uid = int(data.get("user_id", 1))
     name = data.get("name", f"user-{uid}")
     token = create_access_token(identity=str(uid), additional_claims={"name": name})
+    u = User(id = uid, username = "abc", password_hash = "xyz", name = name)
+    db.session.add(u); db.session.flush()
+    db.session.commit()
     ensure_user_has_group(uid)
     return jsonify({"access_token": token})
 
@@ -23,10 +27,10 @@ def my_group():
     uid = get_current_user_id()
     gid = ensure_user_has_group(uid)
     g = Group.query.get(gid)
-    members = GroupMember.query.filter_by(group_id=gid).all()
+    members = User.query.filter_by(group_id=gid).all()
     return jsonify({
         "group": g.to_card(),
-        "members": [{"user_id": m.user_id, "role": m.role, "joined_at": m.joined_at.isoformat()} for m in members],
+        "members": [{"user_id": m.id, "name": m.name} for m in members],
     })
 
 @group_bp.patch("/me")
@@ -37,7 +41,7 @@ def update_my_group():
     g = Group.query.get(gid)
     if not g: return api_error("Group not found", 404)
     data = request.get_json(force=True)
-    for f in ["name","description","desired_size","budget_min","budget_max","suburb"]:
+    for f in ["name","description"]:
         if f in data: setattr(g, f, data[f])
     db.session.commit()
     return jsonify({"group": g.to_card()})
@@ -52,13 +56,11 @@ def leave_group():
         return jsonify({"new_group_id": new_gid, "note": "Created solo group"})
     try:
         with db.session.begin():
-            GroupMember.query.filter_by(group_id=gid, user_id=uid).delete()
-            g = Group(name=f"User {uid}'s group", description="Solo after leave", created_by_user_id=uid)
+            g = Group(name=f"User {uid}'s group", description="Solo after leave")
+            User.query.filter_by(id=uid).first().group_id = g.id
             db.session.add(g); db.session.flush()
-            db.session.add(GroupMember(group_id=g.id, user_id=uid, role="owner"))
-            if GroupMember.query.filter_by(group_id=gid).count() == 0:
-                old = Group.query.get(gid)
-                if old: old.status = "archived"
+            if User.query.filter_by(id=gid).count() == 0:
+                delete(Group).where(Group.c.id == gid)
         return jsonify({"new_group_id": g.id})
     except IntegrityError:
         db.session.rollback()
@@ -67,7 +69,7 @@ def leave_group():
 @group_bp.get("/<int:group_id>")
 def get_group_card(group_id: int):
     g = Group.query.get(group_id)
-    if not g or g.status != "active": return api_error("Group not found", 404)
+    if not g: return api_error("Group not found", 404)
     return jsonify({"group": g.to_card()})
 
 def api_error(msg, code=400):
@@ -80,14 +82,15 @@ def get_current_user_id() -> int:
     return int(uid)
 
 def get_current_group_id(uid: int):
-    gm = GroupMember.query.filter_by(user_id=uid).first()
-    return gm.group_id if gm else None
+    gid = User.query.filter_by(id=uid).first().group_id
+    return gid
 
 def ensure_user_has_group(uid: int) -> int:
-    gm = GroupMember.query.filter_by(user_id=uid).first()
-    if gm: return gm.group_id
-    g = Group(name=f"User {uid}'s group", description="Auto-created", created_by_user_id=uid)
+    u = User.query.filter_by(id=uid).first()
+    gid = u.group_id
+    if gid: return gid
+    g = Group(name=f"User {uid}'s group", description="Auto-created")
     db.session.add(g); db.session.flush()
-    db.session.add(GroupMember(group_id=g.id, user_id=uid, role="owner"))
+    u.group_id = g.id
     db.session.commit()
     return g.id
