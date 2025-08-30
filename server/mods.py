@@ -14,6 +14,18 @@ class User(db.Model):
     bio = db.Column(db.Text)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    def to_card(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "age": self.age,
+            "location": self.location,
+            "min_budget": self.min_budget,
+            "max_budget": self.max_budget,
+            "bio": self.bio,
+            "group_id": self.group_id
+        }
 
 class Group(db.Model):
     __tablename__ = 'groups'
