@@ -5,7 +5,7 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from .extensions import db
+from server.db import db
 
 def create_app():
     app = Flask(__name__)
@@ -18,20 +18,15 @@ def create_app():
     JWTManager(app)
     CORS(app)
 
-    from .group_routes import group_bp  # <-- relative import AFTER db.init_app
-    from .swipe_routes import swipe_bp
+    from .routes.group_routes import group_bp  # <-- relative import AFTER db.init_app
+    from .routes.swipe_routes import swipe_bp
+    from .routes.chat_routes import chat_bp
     app.register_blueprint(group_bp, url_prefix="/groups")
     app.register_blueprint(swipe_bp, url_prefix="/swipes")
+    app.register_blueprint(chat_bp,  url_prefix="/chats")
 
     with app.app_context():
         db.create_all()
-
-    @app.get("/health")
-    def health():
-        return {"ok": True}
-
-    @app.errorhandler(404)
-    def nf(_): return jsonify({"error":"Not found"}), 404
 
     return app
 
