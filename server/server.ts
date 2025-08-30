@@ -36,7 +36,8 @@ app.post('/auth/login', (req: Request, res: Response) => {
 
 app.get('/auth/me', (req: Request, res: Response) => {
   try {
-    const token = req.header('token') || '';
+    const auth = req.header('Authorization') || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
     const result = authMe(token);
     saveData();
     return res.status(200).json(result);
@@ -47,7 +48,8 @@ app.get('/auth/me', (req: Request, res: Response) => {
 
 app.get('/users/me', (req: Request, res: Response) => {
   try {
-    const token = req.header('token') || '';
+    const auth = req.header('Authorization') || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
     const result = usersMe(token);
     saveData();
     return res.status(200).json(result);
@@ -58,7 +60,8 @@ app.get('/users/me', (req: Request, res: Response) => {
 
 app.put('/users/me', (req: Request, res: Response) => {
   try {
-    const token = req.header('token') || '';
+    const auth = req.header('Authorization') || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : auth;
     const result = usersMeUpdate(token, req.body ?? {});
     saveData();
     return res.status(200).json(result);

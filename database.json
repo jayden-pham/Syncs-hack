@@ -5,6 +5,12 @@
       "username": "alex@example.com",
       "password": "$2b$10$rA7E6L.Mnry0anODY.zk7ut4oqmnxXbbF.zJbVkwp.cOZ6RWgKsLO",
       "profileId": "c7833b63-bbeb-492f-8080-202f7b77c6bc"
+    },
+    {
+      "userId": "2b3b4871-6334-4ca3-bf4b-3642eb158e98",
+      "username": "hello@example.com",
+      "password": "$2b$10$hGjZgVIpMd3sB7sHE5/AH.a96ak8bpvmuYEERy2RRQ8aN3n4ciN3C",
+      "profileId": "19837c98-4157-483b-a5e4-770b754fe5c1"
     }
   ],
   "profiles": [
@@ -15,6 +21,13 @@
       "budget": 450,
       "bio": "chill roommate, tidy",
       "location": "Sydney",
+      "phoneNumber": null,
+      "currentGroupId": null
+    },
+    {
+      "profileId": "19837c98-4157-483b-a5e4-770b754fe5c1",
+      "nameFirst": "Alex",
+      "nameLast": "Zhang",
       "phoneNumber": null,
       "currentGroupId": null
     }
