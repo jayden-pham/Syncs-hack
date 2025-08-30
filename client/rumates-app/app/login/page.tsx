@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft } from "lucide-react"
+import { api } from "@/lib/api";
+
 
 interface LoginPageProps {
   setCurrentPage: (page: string) => void
@@ -13,13 +15,23 @@ interface LoginPageProps {
 }
 
 export default function LoginPage({ setCurrentPage, username, setUsername, password, setPassword }: LoginPageProps) {
-  const handleLogin = () => {
-    if (username === "invalid") {
-      setCurrentPage("oops")
-    } else {
-      setCurrentPage("personal-info")
+  const handleLogin = async () => {
+    try {
+      const res = await api("/users/register", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+  
+      // Save token to localStorage for future requests
+      localStorage.setItem("access_token", res.access_token);
+  
+      // Move to next page
+      setCurrentPage("personal-info");
+    } catch (err) {
+      console.error(err);
+      alert("Invalid username or password");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
