@@ -2,9 +2,11 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import delete
-from .app import db
-from .models import Group, User, Swipe, Chat
-from .extensions import db
+from server.app import db
+from server.models.group import Group
+from server.models.user import User
+from server.models.swipe import Swipe
+from server.models.chat import Chat
 
 
 swipe_bp = Blueprint("swipes", __name__)
