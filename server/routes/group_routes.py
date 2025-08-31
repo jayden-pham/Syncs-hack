@@ -16,23 +16,21 @@ def dev_login():
     uid = int(data.get("user_id", 1))
     name = data.get("name", f"user-{uid}")
 
-    # Try to reuse the same user; create only if missing
-    u = db.session.get(User, uid)  # SQLAlchemy 2.0 style; or User.query.get(uid) in 1.x
+    u = db.session.get(User, uid)
     if u is None:
         u = User(
             id=uid,
-            username=f"user-{uid}",   # avoid unique collisions on username
+            username=f"user-{uid}", 
             password_hash="xyz",
             name=name,
         )
         db.session.add(u)
     else:
-        # optional: keep dev info fresh
         u.name = name
 
-    db.session.commit()  # flush happens here
+    db.session.commit()
 
-    ensure_user_has_group(u.id)  # if this writes, consider wrapping in same txn
+    ensure_user_has_group(u.id)
     token = create_access_token(identity=str(u.id), additional_claims={"name": u.name})
     return jsonify({"access_token": token})
 
@@ -104,7 +102,6 @@ def ensure_user_has_group(user: User, max_size: int | None = None):
     if user.group_id:
         return
 
-    # Find the group with the fewest users (or none exist yet)
     subq = (
         db.session.query(User.group_id, func.count(User.id).label("n"))
         .group_by(User.group_id)
@@ -122,7 +119,6 @@ def ensure_user_has_group(user: User, max_size: int | None = None):
         db.session.add(g)
         db.session.flush()
 
-    # If you want a cap per group, create a new one when full
     if max_size is not None:
         current_count = (
             db.session.query(func.count(User.id))
