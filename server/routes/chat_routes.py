@@ -1,4 +1,3 @@
-# server/chat_routes.py
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func
@@ -8,8 +7,6 @@ from server.models.chat import Chat
 from server.models.message import Message
 
 chat_bp = Blueprint("chats", __name__)
-
-# ------------ Helpers ------------
 
 def current_uid() -> int:
     return int(get_jwt_identity())
@@ -26,8 +23,6 @@ def is_participant(chat_id: int, uid: int) -> bool:
 def ensure_membership_or_404(chat_id: int, uid: int):
     if not is_participant(chat_id, uid):
         return jsonify({"error": "Not found"}), 404
-
-# ------------ Endpoints ------------
 
 @chat_bp.get("/")
 @jwt_required()
@@ -103,7 +98,7 @@ def get_messages(chat_id: int):
     if before_id:
         q = q.filter(Message.id < int(before_id))
     msgs = q.order_by(Message.id.desc()).limit(limit).all()
-    msgs = list(reversed(msgs))  # return ascending
+    msgs = list(reversed(msgs))
 
     return jsonify({"messages": [m.to_dict() for m in msgs]})
 

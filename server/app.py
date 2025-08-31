@@ -1,4 +1,3 @@
-# server/app.py
 import os
 from datetime import timedelta
 from flask import Flask, jsonify
@@ -14,11 +13,11 @@ def create_app():
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
 
-    db.init_app(app)       # <-- binds THIS db to THIS app
+    db.init_app(app)
     JWTManager(app)
     CORS(app)
 
-    from server.routes.group_routes import group_bp  # <-- relative import AFTER db.init_app
+    from server.routes.group_routes import group_bp
     from server.routes.swipe_routes import swipe_bp
     from server.routes.chat_routes import chat_bp
     from server.routes.auth_routes import auth_bp

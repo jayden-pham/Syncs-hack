@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import delete
+from sqlalchemy import delete, func
 from server.db import db
 from server.models.group import Group
 from server.models.user import User
@@ -16,23 +16,21 @@ def dev_login():
     uid = int(data.get("user_id", 1))
     name = data.get("name", f"user-{uid}")
 
-    # Try to reuse the same user; create only if missing
-    u = db.session.get(User, uid)  # SQLAlchemy 2.0 style; or User.query.get(uid) in 1.x
+    u = db.session.get(User, uid)
     if u is None:
         u = User(
             id=uid,
-            username=f"user-{uid}",   # avoid unique collisions on username
+            username=f"user-{uid}", 
             password_hash="xyz",
             name=name,
         )
         db.session.add(u)
     else:
-        # optional: keep dev info fresh
         u.name = name
 
-    db.session.commit()  # flush happens here
+    db.session.commit()
 
-    ensure_user_has_group(u.id)  # if this writes, consider wrapping in same txn
+    ensure_user_has_group(u.id)
     token = create_access_token(identity=str(u.id), additional_claims={"name": u.name})
     return jsonify({"access_token": token})
 
@@ -100,12 +98,36 @@ def get_current_group_id(uid: int):
     gid = User.query.filter_by(id=uid).first().group_id
     return gid
 
-def ensure_user_has_group(uid: int) -> int:
-    u = User.query.filter_by(id=uid).first()
-    gid = u.group_id
-    if gid: return gid
-    g = Group(name=f"User {uid}'s group", description="Auto-created")
-    db.session.add(g); db.session.flush()
-    u.group_id = g.id
-    db.session.commit()
-    return g.id
+def ensure_user_has_group(user: User, max_size: int | None = None):
+    if user.group_id:
+        return
+
+    subq = (
+        db.session.query(User.group_id, func.count(User.id).label("n"))
+        .group_by(User.group_id)
+        .subquery()
+    )
+    g = (
+        db.session.query(Group)
+        .outerjoin(subq, Group.id == subq.c.group_id)
+        .order_by(func.coalesce(subq.c.n, 0).asc(), Group.id.asc())
+        .first()
+    )
+
+    if g is None:
+        g = Group(name="Group 1", description="Auto-created")
+        db.session.add(g)
+        db.session.flush()
+
+    if max_size is not None:
+        current_count = (
+            db.session.query(func.count(User.id))
+            .filter(User.group_id == g.id)
+            .scalar()
+        )
+        if current_count >= max_size:
+            g = Group(name=f"Group {g.id + 1}", description="Auto-created")
+            db.session.add(g)
+            db.session.flush()
+
+    user.group = g

@@ -16,12 +16,10 @@ class User(db.Model):
     max_budget  = db.Column(db.Integer)
     bio         = db.Column(db.Text)
 
-    # NOTE: if you're also using GroupMember for membership, keep these consistent or remove one
     group_id    = db.Column(db.Integer, db.ForeignKey("groups.id"))
 
     created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    # ---- helpers ----
     def set_password(self, raw_password: str) -> None:
         self.password_hash = generate_password_hash(raw_password)
 
